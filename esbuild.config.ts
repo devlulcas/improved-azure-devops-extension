@@ -76,6 +76,8 @@ function createAction(dir: string, { in: field, ...config }: UserInputConfig) {
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
           <script src="index.js" type="module" defer></script>
         </head>
+        <body>
+        </body>
       </html>
     `;
 
