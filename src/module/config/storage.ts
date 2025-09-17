@@ -1,22 +1,22 @@
 import { wrapAsync } from "../../libs/result.ts";
 import { createStorageKey } from "../../libs/storage-key.ts";
-import { ConfigStorage, DEFAULT_CONFIG, parseConfigStorage } from "./schema.ts";
+import { Config, DEFAULT_CONFIG, parseConfigStorage } from "./schema.ts";
 
 export const configStorageKey = createStorageKey("config", 1);
 
-export async function getConfig() {
+export async function getConfig(): Promise<Config> {
   const result = await wrapAsync(async () => {
     const storage = await chrome.storage.local.get(configStorageKey);
-    return parseConfigStorage(storage);
+    return parseConfigStorage(storage)[configStorageKey];
   });
 
-  return result.unwrapOr(DEFAULT_CONFIG);
+  return result.unwrapOr(DEFAULT_CONFIG[configStorageKey]);
 }
 
-export async function setConfig(config: Partial<ConfigStorage>) {
-const currentConfig = await getConfig();
+export async function setConfig(config: Partial<Config>): Promise<Config> {
+  const currentConfig = await getConfig();
 
-  const newConfig = { ...currentConfig, ...config };
+  const newConfig: Config = { ...currentConfig, ...config };
 
   const result = await wrapAsync(async () => {
     await chrome.storage.local.set({ [configStorageKey]: newConfig });
@@ -27,7 +27,7 @@ const currentConfig = await getConfig();
 }
 
 export function listenToConfigStorageChanges(
-  callback: (config: ConfigStorage) => void
+  callback: (config: Config) => void
 ) {
   const listener = (
     changes: { [key: string]: chrome.storage.StorageChange },
@@ -40,7 +40,7 @@ export function listenToConfigStorageChanges(
         [configStorageKey]: newValue,
       });
 
-      callback(parsed);
+      callback(parsed[configStorageKey]);
     }
   };
 

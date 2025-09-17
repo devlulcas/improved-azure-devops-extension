@@ -7,13 +7,30 @@ export const StoredBoolean = pipe(
   boolean()
 );
 
+export const StoredGroupBy = pipe(
+  unknown(),
+  union([literal("author"), literal("targetBranch")])
+);
+
+export type StoredGroupBy = InferOutput<typeof StoredGroupBy>;
+
+export const StoredShowDrafts = pipe(
+  unknown(),
+  union([literal("all"), literal("only"), literal("none"), literal("isolated")])
+);
+
+export type StoredShowDrafts = InferOutput<typeof StoredShowDrafts>;
+
+export const Config = object({
+  enabled: StoredBoolean,
+  showDrafts: StoredShowDrafts,
+  groupBy: StoredGroupBy,
+});
+
+export type Config = InferOutput<typeof Config>;
 
 export const ConfigStorage = object({
-  [configStorageKey]: object({
-    enabled: StoredBoolean,
-    showDrafts: union([literal("all"), literal("only"), literal("none"), literal("isolated")]),
-    groupBy: union([literal("author"), literal("targetBranch")]),
-  }),
+  [configStorageKey]: Config,
 });
 
 export type ConfigStorage = InferOutput<typeof ConfigStorage>;
