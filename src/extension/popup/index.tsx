@@ -1,3 +1,4 @@
+import { Provider } from "@/components/ui/provider";
 import React from "react";
 import { renderExtension } from "../../libs/render-extension.ts";
 import { LanguageSwitch } from "../../module/i18n/components/language-switch.tsx";
@@ -39,7 +40,9 @@ function Content() {
 function App() {
   return (
     <I18nProvider>
-      <Content />
+      <Provider>
+        <Content />
+      </Provider>
     </I18nProvider>
   );
 }

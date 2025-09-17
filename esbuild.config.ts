@@ -49,11 +49,6 @@ function createContentScript(
 
   const relativeJs = path.relative(outDir, path.join(outDir, dir, "index.js"));
 
-  const relativeCss = path.relative(
-    outDir,
-    path.join(outDir, dir, "index.css")
-  );
-
   const initialContent = Array.isArray(manifest.content_scripts)
     ? manifest.content_scripts
     : [];
@@ -63,7 +58,6 @@ function createContentScript(
     {
       ...config,
       js: [relativeJs],
-      css: [relativeCss],
     },
   ];
 }
@@ -80,7 +74,6 @@ function createAction(dir: string, { in: field, ...config }: UserInputConfig) {
         <head>
           <meta charset="UTF-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <link rel="stylesheet" href="index.css">
           <script src="index.js" type="module" defer></script>
         </head>
       </html>

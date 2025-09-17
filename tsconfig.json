@@ -1,11 +1,18 @@
 {
   "compilerOptions": {
     "jsx": "react",
-    "module": "NodeNext",
     "target": "esnext",
     "types": ["chrome", "node"],
     "lib": ["dom", "esnext"],
-    "moduleResolution": "nodenext",
+
+
+    // Chakra UI
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "skipLibCheck": true,
+    "paths": {
+      "@/*": ["./src/*"]
+    },
 
     // Stricter Typechecking Options
     "noUncheckedIndexedAccess": true,
@@ -24,7 +31,6 @@
     "isolatedModules": true,
     "noUncheckedSideEffectImports": true,
     "moduleDetection": "force",
-    "skipLibCheck": true,
 
     // JS
     "allowJs": true,
