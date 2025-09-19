@@ -5,8 +5,6 @@ A chrome extension that tweaks Azure Devops UI
 ## Features
 
 - Filter Draft PRs
-- Order by author name, PR number
-- Group by target branch
 - Fully local
 
 ## Installation
