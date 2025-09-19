@@ -2,6 +2,8 @@
 
 A chrome extension that tweaks Azure Devops UI
 
+![preview](./.github/images/preview.webp)
+
 ## Features
 
 - Filter Draft PRs
