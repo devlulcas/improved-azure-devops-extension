@@ -10,5 +10,5 @@
   },
   "description": "Improve Azure DevOps UI",
   "permissions": ["storage", "scripting"],
-  "host_permissions": ["https://dev.azure.com/*"]
+  "host_permissions": ["<all_urls>"]
 }

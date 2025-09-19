@@ -1,7 +1,6 @@
 import { VStack } from "@chakra-ui/react";
 import * as React from "react";
 import { EnabledToggle } from "./enabled-toggle.tsx";
-import { GroupBySelect } from "./group-by-select.tsx";
 import { ShowDraftsSelect } from "./show-drafts-select.tsx";
 
 export function ConfigPanel() {
@@ -10,8 +9,6 @@ export function ConfigPanel() {
       <EnabledToggle />
 
       <ShowDraftsSelect />
-
-      <GroupBySelect />
     </VStack>
   );
 }

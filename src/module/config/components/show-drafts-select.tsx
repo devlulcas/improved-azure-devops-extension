@@ -1,16 +1,9 @@
 import {
-  SelectContent,
-  SelectLabel,
-  SelectRoot,
-  SelectTrigger,
-  SelectValueText,
-} from "@/components/ui/select";
-import {
   Box,
-  createListCollection,
-  SelectItem,
+  RadioGroup,
   Text,
-  type SelectValueChangeDetails,
+  VStack,
+  type RadioGroupValueChangeDetails,
 } from "@chakra-ui/react";
 import * as React from "react";
 import { safeParse } from "valibot";
@@ -24,13 +17,9 @@ const configDictionary = {
     [i18n.en.tag]: "Show Drafts",
     [i18n.pt.tag]: "Mostrar Rascunhos",
   },
-  showDraftsDescription: {
-    [i18n.en.tag]: "Control how draft pull requests are displayed",
-    [i18n.pt.tag]: "Controlar como os pull requests em rascunho são exibidos",
-  },
   showDraftsAll: {
-    [i18n.en.tag]: "All Drafts",
-    [i18n.pt.tag]: "Todos os Rascunhos",
+    [i18n.en.tag]: "All",
+    [i18n.pt.tag]: "Tudo",
   },
   showDraftsOnly: {
     [i18n.en.tag]: "Only Drafts",
@@ -40,10 +29,6 @@ const configDictionary = {
     [i18n.en.tag]: "No Drafts",
     [i18n.pt.tag]: "Sem Rascunhos",
   },
-  showDraftsIsolated: {
-    [i18n.en.tag]: "Isolated Drafts",
-    [i18n.pt.tag]: "Rascunhos Isolados",
-  },
 } as const satisfies Dictionary;
 
 export function ShowDraftsSelect() {
@@ -51,13 +36,9 @@ export function ShowDraftsSelect() {
   const text = useI18n(configDictionary);
 
   const handleShowDraftsChange = async (
-    options: SelectValueChangeDetails<{ value: string; label: string }>
+    event: RadioGroupValueChangeDetails
   ) => {
-    const firstOption = options.items.at(0);
-
-    if (!firstOption) return;
-
-    const parsed = safeParse(StoredShowDrafts, firstOption.value);
+    const parsed = safeParse(StoredShowDrafts, event.value);
 
     if (!parsed.success) return;
 
@@ -66,39 +47,36 @@ export function ShowDraftsSelect() {
     });
   };
 
-  const showDraftsOptions = createListCollection({
-    items: [
-      { value: "all", label: text.showDraftsAll },
-      { value: "only", label: text.showDraftsOnly },
-      { value: "none", label: text.showDraftsNone },
-      { value: "isolated", label: text.showDraftsIsolated },
-    ],
-  });
+  const options = [
+    { value: "all", label: text.showDraftsAll },
+    { value: "only", label: text.showDraftsOnly },
+    { value: "none", label: text.showDraftsNone },
+  ];
 
   return (
     <Box>
       <Box mb={2}>
-        <SelectLabel>{text.showDrafts}</SelectLabel>
+        <Text fontWeight="medium" fontSize="sm">
+          {text.showDrafts}
+        </Text>
       </Box>
-      <SelectRoot
-        value={[config.showDrafts]}
+      <RadioGroup.Root
+        value={config.showDrafts}
         onValueChange={handleShowDraftsChange}
-        collection={showDraftsOptions}
       >
-        <SelectTrigger>
-          <SelectValueText placeholder={text.showDrafts} />
-        </SelectTrigger>
-        <SelectContent>
-          {showDraftsOptions.items.map((option) => (
-            <SelectItem key={option.value} item={option}>
-              {option.label}
-            </SelectItem>
+        <VStack align="start" gap={2}>
+          {options.map((option) => (
+            <RadioGroup.Item key={option.value} value={option.value}>
+              <RadioGroup.ItemHiddenInput />
+              <RadioGroup.ItemIndicator />
+
+              <RadioGroup.ItemText fontSize="sm">
+                {option.label}
+              </RadioGroup.ItemText>
+            </RadioGroup.Item>
           ))}
-        </SelectContent>
-      </SelectRoot>
-      <Text fontSize="sm" color="fg.muted" mt={1}>
-        {text.showDraftsDescription}
-      </Text>
+        </VStack>
+      </RadioGroup.Root>
     </Box>
   );
 }

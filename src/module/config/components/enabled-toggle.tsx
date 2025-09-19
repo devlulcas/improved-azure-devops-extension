@@ -10,10 +10,6 @@ const configDictionary = {
     [i18n.en.tag]: "Enable Extension",
     [i18n.pt.tag]: "Habilitar Extensão",
   },
-  enabledDescription: {
-    [i18n.en.tag]: "Enable or disable the extension functionality",
-    [i18n.pt.tag]: "Habilitar ou desabilitar a funcionalidade da extensão",
-  },
 } as const satisfies Dictionary;
 
 export function EnabledToggle() {
@@ -33,7 +29,6 @@ export function EnabledToggle() {
       checked={config.enabled}
       onCheckedChange={handleEnabledChange}
       label={text.enabled}
-      description={text.enabledDescription}
     />
   );
 }
