@@ -1,51 +1,163 @@
 import { Config, DEFAULT_CONFIG } from "@/module/config/schema.ts";
-import { configStorageKey } from "../../module/config/storage.ts";
+import {
+  configStorageKey,
+  getConfig,
+  listenToConfigStorageChanges,
+} from "../../module/config/storage.ts";
 
-window.addEventListener("load", () => {
-  createStyleBlock();
+const showDraftsSelector = "improved-azure-devops-extension-show-drafts";
+const tableContainerSelector = ".repos-pr-section-card";
+const tableTitleSelector = ".repos-pr-section-header-title";
+const titlePillSelector = ".bolt-pill-content";
+const applyDebounceMs = 120;
 
-  // Initial load
-  chrome.storage.local.get(configStorageKey).then((config) => {
-    run(config[configStorageKey] ?? DEFAULT_CONFIG[configStorageKey]);
-  });
+let config: Config = DEFAULT_CONFIG[configStorageKey];
+let applyTimer: number | null = null;
+let pendingContainers: Set<HTMLDivElement> | null = null;
+let observer: MutationObserver | null = null;
+const lastTitleByContainer = new WeakMap<HTMLDivElement, string>();
 
-  // Listen to config changes
-  chrome.storage.onChanged.addListener((changes) => {
-    const config: Config =
-      changes[configStorageKey]?.newValue ?? DEFAULT_CONFIG[configStorageKey];
-    run(config);
-  });
-});
+function updateContainer(container: HTMLDivElement, currentConfig: Config) {
+  if (container.getAttribute(showDraftsSelector) !== currentConfig.showDrafts) {
+    container.setAttribute(showDraftsSelector, currentConfig.showDrafts);
+  }
 
-function run(config: Config) {
-  const tableContainer = document.querySelector<HTMLDivElement>(
-    ".repos-pr-section-card"
-  );
+  const titlePill = container
+    .querySelector<HTMLDivElement>(tableTitleSelector)
+    ?.querySelector<HTMLDivElement>(titlePillSelector);
 
-  const wrapper = tableContainer?.parentElement;
-
-  if (tableContainer === undefined || !wrapper) {
-    console.log("No table container or wrapper found", {
-      tableContainer,
-      wrapper,
-    });
+  if (!titlePill) {
     return;
   }
 
-  const selector = `improved-azure-devops-extension-show-drafts`;
+  const draftsCount = container.querySelectorAll<HTMLAnchorElement>(
+    `a:has([aria-label="Draft"])`
+  ).length;
+  const activeCount = container.querySelectorAll<HTMLAnchorElement>(
+    `a:not(:has([aria-label="Draft"]))`
+  ).length;
+  const title = `Drafts (${draftsCount}) / Active (${activeCount})`;
+  const lastTitle = lastTitleByContainer.get(container);
 
-  if (!config.enabled) {
-    tableContainer.setAttribute(selector, "all");
-    return;
+  if (lastTitle !== title) {
+    titlePill.textContent = title;
+    lastTitleByContainer.set(container, title);
   }
-
-  tableContainer.setAttribute(selector, config.showDrafts ?? "all");
 }
 
-function createStyleBlock() {
-  const classNameHash = crypto.randomUUID();
+function applyConfig(currentConfig: Config, containers?: Set<HTMLDivElement>) {
+  const targetContainers =
+    containers && containers.size > 0
+      ? [...containers].filter((container) => container.isConnected)
+      : Array.from(
+          document.querySelectorAll<HTMLDivElement>(tableContainerSelector)
+        );
 
-  const id = `improved-azure-devops-extension-style-${classNameHash}`;
+  if (targetContainers.length === 0) {
+    return;
+  }
+
+  targetContainers.forEach((container) => {
+    updateContainer(container, currentConfig);
+  });
+}
+
+function scheduleApply(containers?: Set<HTMLDivElement>) {
+  if (containers && containers.size > 0) {
+    if (pendingContainers === null) {
+      pendingContainers = new Set(containers);
+    } else {
+      containers.forEach((container) => pendingContainers?.add(container));
+    }
+  } else {
+    pendingContainers = null;
+  }
+
+  if (applyTimer !== null) {
+    return;
+  }
+
+  applyTimer = window.setTimeout(() => {
+    applyTimer = null;
+    const containers = pendingContainers;
+    pendingContainers = null;
+    applyConfig(config, containers ?? undefined);
+  }, applyDebounceMs);
+}
+
+function getContainerFromNode(node: Node): HTMLDivElement | null {
+  if (node instanceof Element) {
+    return node.closest<HTMLDivElement>(tableContainerSelector);
+  }
+
+  if (node.parentElement) {
+    return node.parentElement.closest<HTMLDivElement>(tableContainerSelector);
+  }
+
+  return null;
+}
+
+function startObserver() {
+  if (observer || !document.documentElement) {
+    return;
+  }
+
+  observer = new MutationObserver((mutations) => {
+    const affectedContainers = new Set<HTMLDivElement>();
+
+    mutations.forEach((mutation) => {
+      const targetContainer = getContainerFromNode(mutation.target);
+      if (targetContainer) {
+        affectedContainers.add(targetContainer);
+      }
+
+      mutation.addedNodes.forEach((node) => {
+        const container = getContainerFromNode(node);
+        if (container) {
+          affectedContainers.add(container);
+        }
+      });
+    });
+
+    if (affectedContainers.size > 0) {
+      scheduleApply(affectedContainers);
+      return;
+    }
+
+    scheduleApply();
+  });
+
+  observer.observe(document.documentElement, {
+    childList: true,
+    subtree: true,
+  });
+}
+
+function init() {
+  createStyleBlock();
+  startObserver();
+
+  scheduleApply();
+
+  getConfig().then((currentConfig) => {
+    config = currentConfig;
+    scheduleApply();
+  });
+
+  listenToConfigStorageChanges((currentConfig) => {
+    config = currentConfig;
+    scheduleApply();
+  });
+
+  window.addEventListener("pageshow", () => {
+    scheduleApply();
+  });
+}
+
+init();
+
+function createStyleBlock() {
+  const id = "improved-azure-devops-extension-style";
 
   if (!document.getElementById(id)) {
     const style = document.createElement("style");

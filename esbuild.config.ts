@@ -33,7 +33,15 @@ async function readMetaFiles() {
 
     const { config } = await loadConfig({ configFile: metaPath });
 
-    const inPath = path.join(extensionRoot, dir, "index.tsx");
+    const tsxEntryPath = path.join(extensionRoot, dir, "index.tsx");
+    const tsEntryPath = path.join(extensionRoot, dir, "index.ts");
+    const inPath = fs.existsSync(tsxEntryPath) ? tsxEntryPath : tsEntryPath;
+
+    if (!fs.existsSync(inPath)) {
+      const message = "Entry point not found for extension dir";
+      console.error(message, { dir, tsxEntryPath, tsEntryPath });
+      throw new Error(message);
+    }
 
     return { config, entryPoint: inPath, dir };
   });
@@ -94,6 +102,27 @@ function createAction(dir: string, { in: field, ...config }: UserInputConfig) {
   };
 }
 
+function createBackground(
+  dir: string,
+  { in: field, ...config }: UserInputConfig
+) {
+  if (field !== "background") return;
+
+  const relativeJs = path.relative(outDir, path.join(outDir, dir, "index.js"));
+
+  const key = typeof config.as === "string" ? config.as : "service_worker";
+
+  const initialContent =
+    typeof manifest.background === "object" && manifest.background !== null
+      ? manifest.background
+      : {};
+
+  manifest.background = {
+    ...initialContent,
+    [key]: relativeJs,
+  };
+}
+
 async function main() {
   const loadedMetaFiles = await readMetaFiles();
 
@@ -116,6 +145,7 @@ async function main() {
   loadedMetaFiles.forEach((m) => {
     createAction(m.dir, m.config);
     createContentScript(m.dir, m.config);
+    createBackground(m.dir, m.config);
   });
 
   // Update manifest
